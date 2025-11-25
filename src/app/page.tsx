@@ -7,8 +7,8 @@ export default function Home() {
           Mont Blanc weather & avalanche dashboard
         </h1>
         <p className="max-w-2xl text-base leading-7 text-neutral-600">
-          Next.js + TypeScript starter is in place. Tailwind CSS and ESLint are configured.
-          We will layer in Supabase, shadcn/ui, data fetching, and translations next.
+          Next.js + TypeScript starter is in place. Tailwind CSS and ESLint are configured. We will
+          layer in Supabase, shadcn/ui, data fetching, and translations next.
         </p>
       </header>
 

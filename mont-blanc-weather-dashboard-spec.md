@@ -1,9 +1,9 @@
-
 # Mont Blanc Weather & Avalanche Dashboard – Project Spec
 
 This document describes the **Mont Blanc Weather & Avalanche Dashboard** web app and provides a **step‑by‑step implementation plan** suitable for driving an AI coding assistant (e.g. “Codex” in VS Code).
 
 The key goals:
+
 - Build a **Next.js + TypeScript** app
 - Use **Tailwind CSS** and **shadcn/ui** for UI
 - Use **Supabase** (Postgres) for data storage + caching
@@ -13,7 +13,6 @@ The key goals:
 - Translate French bulletins into **English** using **OpenAI** (minimising cost via caching)
 - Optimise for **mobile** but work well on desktop
 - Keep everything as **cheap and robust** as reasonably possible for a hobby project
-
 
 ---
 
@@ -30,24 +29,22 @@ The key goals:
 - **Background jobs**: (For later) Vercel cron jobs or external scheduler to call your APIs
 - **AI Translation**: OpenAI API, used rarely and in a cached way
 
-
 ### 1.2. Data Sources
 
-1. **Météo-France (Portail-API)**  
+1. **Météo-France (Portail-API)**
    - Use for **avalanche bulletin (BRA)** for **Mont-Blanc** massif.
    - Optional: use for additional weather parameters.
 
-2. **Open-Meteo (Météo-France model)** (optional)  
+2. **Open-Meteo (Météo-France model)** (optional)
    - Free source for high-altitude weather (wind, temperature, cloudiness, precipitation).
 
-3. **Chamonix-Météo website**  
+3. **Chamonix-Météo website**
    - No official API → we **scrape** selected information from HTML.
    - Must **respect robots.txt** and avoid high frequency requests.
 
-4. **OpenAI**  
+4. **OpenAI**
    - Translate **French → English** for textual bulletins (BRA + Chamonix-Météo narrative).
    - Cache translations by original French text to avoid repeated usage.
-
 
 ### 1.3. Data Flow
 
@@ -69,7 +66,6 @@ The key goals:
 5. Frontend renders using shadcn components & Tailwind, optimised for mobile.
 
 Later, background jobs (cron) can pre‑fetch data early in the morning so user gets instant load.
-
 
 ---
 
@@ -131,7 +127,6 @@ Generic table for scraped narrative text (e.g. Chamonix-Météo).
 - `created_at` (timestamptz)
 - `updated_at` (timestamptz)
 
-
 ---
 
 ## 3. API Endpoints
@@ -189,6 +184,7 @@ type DashboardResponse = {
 ```
 
 Responsibilities:
+
 1. Fetch latest records from Supabase.
 2. Optionally trigger “on-demand update” if data missing/stale.
 3. Assemble final `DashboardResponse` object.
@@ -197,6 +193,7 @@ Responsibilities:
 ### 3.2. `/api/update/meteo-france-bra`
 
 Internal endpoint that:
+
 1. Calls Météo-France BRA API for Mont-Blanc.
 2. Parses response into structured data.
 3. Checks if the French text already exists (identical) in `avalanche_bulletins` / `text_sources`.
@@ -205,27 +202,28 @@ Internal endpoint that:
    - Stores new record in Supabase.
 
 Used either:
+
 - Manually during development
 - As a target of cron job in production
 
 ### 3.3. `/api/update/chamonix-meteo`
 
 Internal endpoint that:
+
 1. Fetches HTML from `https://chamonix-meteo.com/` on the server.
 2. Parses relevant sections with `cheerio` (or similar).
 3. Produces `french_text` summary string.
 4. Looks up cached translation in `text_sources`:
-
    - If existing `french_text` already has an `english_text` → reuse.
    - Otherwise call OpenAI → store translation.
 
 ### 3.4. `/api/update/weather`
 
 Internal endpoint that:
+
 1. Calls desired weather source(s) (e.g. Open-Meteo using Météo-France model).
 2. Extracts key metrics for today’s morning / daytime.
 3. Stores as a new row in `weather_snapshots`.
-
 
 ---
 
@@ -237,29 +235,29 @@ We use **shadcn/ui** + Tailwind, mobile-first.
 
 Sections:
 
-1. **Header**  
+1. **Header**
    - App title, date, last update times.
    - Style: `flex`, small logo/emoji, `text-sm` for metadata.
 
-2. **Critical Summary Cards**  
+2. **Critical Summary Cards**
    - Avalanche danger level (min/max) with color-coded badge (1–5).
    - Forecast summary: wind, recent snowfall, freezing level.
    - Use shadcn `Card` and `Badge` components.
 
-3. **Avalanche Details**  
+3. **Avalanche Details**
    - Use `Tabs` or `Accordion`:
      - “Overview” – English summary text.
      - “By altitude” – card per elevation band with risk level + aspects.
    - Optionally show a small schematic of aspects (N, NE, E, …) as grid.
 
-4. **Weather Overview**  
+4. **Weather Overview**
    - Simple summary of:
      - Low-alt vs high-alt temperature
      - Wind speed/direction
      - Cloudiness and recent snowfall
    - Could use a small chart later (e.g. Recharts) for time series.
 
-5. **Source Recaps**  
+5. **Source Recaps**
    - Two cards:
      - **Météo-France bulletin recap**
      - **Chamonix-Météo recap**
@@ -268,9 +266,8 @@ Sections:
      - “Last updated …”
      - English text with optional toggle to show original French text.
 
-6. **Footer**  
+6. **Footer**
    - Disclaimer (“Always cross-check official bulletins”, etc.).
-
 
 ### 4.2. Styling / Responsiveness
 
@@ -279,7 +276,6 @@ Sections:
   - `grid-cols-2` for summary + details.
   - `md:grid`, `lg:grid-cols-3` where appropriate.
 - Tailwind utility classes with shadcn tokens for consistent spacing and typography.
-
 
 ---
 
@@ -290,14 +286,14 @@ Each step describes what the coding assistant should do.
 
 ### 5.1. Project Bootstrapping
 
-1. **Create Next.js App (TypeScript, App Router)**  
-   - Command (manual, not for Codex):  
+1. **Create Next.js App (TypeScript, App Router)**
+   - Command (manual, not for Codex):
      ```bash
      npx create-next-app@latest mont-blanc-dashboard --typescript --eslint --tailwind --app
      ```
    - Ensure Tailwind is already configured by the template.
 
-2. **Configure ESLint + Prettier (optional but recommended)**  
+2. **Configure ESLint + Prettier (optional but recommended)**
    - Add Prettier config.
    - Ensure consistent formatting (Codex can help autofix).
 
@@ -310,16 +306,17 @@ Each step describes what the coding assistant should do.
    - `openai` (official OpenAI client)
    - `@tanstack/react-query` (if you choose to use it)
    - `lucide-react` (icons, used by shadcn)
-   - `clsx` and `tailwind-merge` (usually added by shadcn template)  
+   - `clsx` and `tailwind-merge` (usually added by shadcn template)
 
    Example:
+
    ```bash
    pnpm add @supabase/supabase-js cheerio openai @tanstack/react-query lucide-react
    ```
 
 ### 5.2. Setup Supabase
 
-4. **Create a Supabase project** (via web UI).  
+4. **Create a Supabase project** (via web UI).
    - Note `SUPABASE_URL` and `SUPABASE_ANON_KEY`
 
 5. **Create database tables** using SQL in Supabase UI:
@@ -330,6 +327,7 @@ Each step describes what the coding assistant should do.
    You can copy the schema definitions from section 2 into SQL. Codex can generate the SQL given the fields.
 
 6. **Set environment variables** in Next.js (`.env.local`):
+
    ```env
    NEXT_PUBLIC_SUPABASE_URL=...
    NEXT_PUBLIC_SUPABASE_ANON_KEY=...
@@ -338,17 +336,17 @@ Each step describes what the coding assistant should do.
    METEO_FRANCE_API_KEY=...       # when available
    ```
 
-7. **Create a Supabase client helper**  
+7. **Create a Supabase client helper**
    - File: `lib/supabaseClient.ts` for browser (using anon key)
    - File: `lib/supabaseServer.ts` or similar for server-side (optionally using service key).
 
 ### 5.3. Integrate shadcn/ui
 
-8. **Check shadcn installation**  
+8. **Check shadcn installation**
    - Confirm that `shadcn/ui` is installed (via your MCP setup).
    - Ensure Tailwind config and alias `@/components` are set correctly.
 
-9. **Generate basic UI components using shadcn CLI**  
+9. **Generate basic UI components using shadcn CLI**
    - `button`, `card`, `tabs`, `accordion`, `badge`, `skeleton`, `toggle` components.
    - Codex can assist in wiring them up with your design.
 
@@ -365,7 +363,7 @@ Each step describes what the coding assistant should do.
     - Accept minimal parameters (e.g. massif code, lat/long)
     - Return typed objects with only relevant data for the app.
 
-11. **Create translation helper using OpenAI**  
+11. **Create translation helper using OpenAI**
     - File: `lib/translate.ts`
     - Export a function `translateFrenchToEnglish(french: string): Promise<string>`.
     - Inside:
@@ -373,7 +371,7 @@ Each step describes what the coding assistant should do.
       - If translation exists, return it.
       - If not, call OpenAI with system prompt emphasising accurate avalanche/weather translation, store result, then return.
 
-12. **Create data ingestion functions**  
+12. **Create data ingestion functions**
     - File: `lib/ingestMeteoFranceBra.ts`:
       - Fetch BRA → parse → store into `avalanche_bulletins` and `text_sources` (if you want both).
       - Use translation helper for text fields.
@@ -384,20 +382,20 @@ Each step describes what the coding assistant should do.
 
 ### 5.5. API Routes (Route Handlers)
 
-13. **Create `/app/api/update/meteo-france-bra/route.ts`**  
+13. **Create `/app/api/update/meteo-france-bra/route.ts`**
     - HTTP method: `POST` or `GET` (for dev convenience)
     - Calls `ingestMeteoFranceBra()`
     - Returns JSON with summary of what was updated.
 
-14. **Create `/app/api/update/chamonix-meteo/route.ts`**  
+14. **Create `/app/api/update/chamonix-meteo/route.ts`**
     - Calls `ingestChamonixMeteo()`
     - Returns JSON with summary.
 
-15. **Create `/app/api/update/weather/route.ts`**  
+15. **Create `/app/api/update/weather/route.ts`**
     - Calls `ingestWeather()`
     - Returns JSON with summary.
 
-16. **Create `/app/api/dashboard/route.ts`**  
+16. **Create `/app/api/dashboard/route.ts`**
     - On each call:
       - Query Supabase for the **most recent** entries from each table (for today / last 24 hours).
       - Optionally, if there is no data for today, call the update endpoints internally.
@@ -406,27 +404,27 @@ Each step describes what the coding assistant should do.
 
 ### 5.6. Frontend Dashboard Page
 
-17. **Create page component** at `app/page.tsx` (or `app/dashboard/page.tsx`)  
+17. **Create page component** at `app/page.tsx` (or `app/dashboard/page.tsx`)
     - This should be a **server component** that fetches `/api/dashboard` using `fetch` (`cache: 'no-store'` or `revalidate` interval).
     - Pass the resulting props to a child **client component** `<Dashboard />` which focuses on UI rendering.
 
-18. **Implement `<Dashboard />` UI using shadcn**  
+18. **Implement `<Dashboard />` UI using shadcn**
     - Use `Card` components for each section.
     - Use `Badge` + `Tooltip` for avalanche level and explanation.
     - Use `Tabs` or `Accordion` for avalanche details sections.
     - Use a simple table or stacked boxes for weather metrics.
 
-19. **Add loading & error states**  
+19. **Add loading & error states**
     - Use shadcn `Skeleton` while data is loading.
     - Show a clear error message if `/api/dashboard` fails.
 
-20. **Mobile optimisation**  
+20. **Mobile optimisation**
     - Ensure layout uses `flex`/`grid` with responsive classes (`md:`, `lg:`).
     - Test on narrow viewport to confirm readability.
 
 ### 5.7. Cron / Scheduled Updates (later step)
 
-21. **Create endpoints that are safe for cron**  
+21. **Create endpoints that are safe for cron**
     - `/api/update/meteo-france-bra`
     - `/api/update/chamonix-meteo`
     - `/api/update/weather`
@@ -460,7 +458,6 @@ Each step describes what the coding assistant should do.
 - Highlight that conditions in high mountains change rapidly.
 - Consider including links to official BRA PDF/website and Chamonix-Météo.
 
-
 ---
 
 ## 7. Nice-to-Have Future Enhancements
@@ -469,7 +466,6 @@ Each step describes what the coding assistant should do.
 - Add a small **time series chart** of avalanche risk over last days.
 - Add simple **route planning notes** per user (requires auth).
 - Add toggles for **units** (°C vs °F, m/s vs km/h) if needed.
-
 
 ---
 
