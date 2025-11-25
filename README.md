@@ -27,3 +27,15 @@ Copy `.env.example` to `.env.local` and fill in:
 - `OPENAI_API_KEY` for translations.
 - `METEO_FRANCE_API_KEY` if you have official API access.
 - `INTERNAL_UPDATE_SECRET` to protect internal update endpoints.
+
+## Supabase client helpers
+
+- Browser/CSR: `getSupabaseBrowserClient()` in `src/lib/supabaseClient.ts`.
+- Server (writes): `getSupabaseServiceRoleClient()` throws if `SUPABASE_SERVICE_ROLE_KEY` is missing to avoid accidental use without credentials.
+
+### Typing Supabase
+
+- `src/lib/database.types.ts` mirrors the spec tables for now. Replace with generated types from your Supabase project when the schema is created:
+  ```bash
+  npx supabase gen types typescript --project-id YOUR_PROJECT_REF --schema public > src/lib/database.types.ts
+  ```
