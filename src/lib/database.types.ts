@@ -1,97 +1,271 @@
-// Types modelled after Supabase generated types. Replace with generated file when schema is live.
-export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "13.0.5"
+  }
   public: {
     Tables: {
       avalanche_bulletins: {
         Row: {
-          id: string;
-          source: string;
-          massif: string;
-          valid_date: string; // date
-          issued_at: string; // timestamptz
-          danger_level_min: number | null;
-          danger_level_max: number | null;
-          danger_level_by_altitude: Json | null;
-          danger_aspects: Json | null;
-          french_text: string | null;
-          english_text: string | null;
-          raw_json: Json | null;
-          created_at: string;
-          updated_at: string;
-        };
+          created_at: string
+          danger_aspects: Json | null
+          danger_level_by_altitude: Json | null
+          danger_level_max: number | null
+          danger_level_min: number | null
+          english_text: string | null
+          french_text: string | null
+          id: string
+          issued_at: string
+          massif: string
+          raw_json: Json | null
+          source: string
+          updated_at: string
+          valid_date: string
+        }
         Insert: {
-          id?: string;
-          source: string;
-          massif: string;
-          valid_date: string;
-          issued_at: string;
-          danger_level_min?: number | null;
-          danger_level_max?: number | null;
-          danger_level_by_altitude?: Json | null;
-          danger_aspects?: Json | null;
-          french_text?: string | null;
-          english_text?: string | null;
-          raw_json?: Json | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: Partial<Database["public"]["Tables"]["avalanche_bulletins"]["Insert"]>;
-        Relationships: [];
-      };
-      weather_snapshots: {
-        Row: {
-          id: string;
-          source: string;
-          timestamp: string; // timestamptz
-          valid_date: string; // date
-          location: string;
-          data: Json | null;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          source: string;
-          timestamp: string;
-          valid_date: string;
-          location: string;
-          data?: Json | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: Partial<Database["public"]["Tables"]["weather_snapshots"]["Insert"]>;
-        Relationships: [];
-      };
+          created_at?: string
+          danger_aspects?: Json | null
+          danger_level_by_altitude?: Json | null
+          danger_level_max?: number | null
+          danger_level_min?: number | null
+          english_text?: string | null
+          french_text?: string | null
+          id?: string
+          issued_at: string
+          massif: string
+          raw_json?: Json | null
+          source: string
+          updated_at?: string
+          valid_date: string
+        }
+        Update: {
+          created_at?: string
+          danger_aspects?: Json | null
+          danger_level_by_altitude?: Json | null
+          danger_level_max?: number | null
+          danger_level_min?: number | null
+          english_text?: string | null
+          french_text?: string | null
+          id?: string
+          issued_at?: string
+          massif?: string
+          raw_json?: Json | null
+          source?: string
+          updated_at?: string
+          valid_date?: string
+        }
+        Relationships: []
+      }
       text_sources: {
         Row: {
-          id: string;
-          source: string;
-          valid_date: string; // date
-          french_text: string | null;
-          english_text: string | null;
-          raw_html: string | null;
-          created_at: string;
-          updated_at: string;
-        };
+          created_at: string
+          english_text: string | null
+          french_text: string | null
+          id: string
+          raw_html: string | null
+          source: string
+          updated_at: string
+          valid_date: string
+        }
         Insert: {
-          id?: string;
-          source: string;
-          valid_date: string;
-          french_text?: string | null;
-          english_text?: string | null;
-          raw_html?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: Partial<Database["public"]["Tables"]["text_sources"]["Insert"]>;
-        Relationships: [];
-      };
-    };
-    Views: Record<string, never>;
-    Functions: Record<string, never>;
-    Enums: Record<string, never>;
-    CompositeTypes: Record<string, never>;
-  };
-};
+          created_at?: string
+          english_text?: string | null
+          french_text?: string | null
+          id?: string
+          raw_html?: string | null
+          source: string
+          updated_at?: string
+          valid_date: string
+        }
+        Update: {
+          created_at?: string
+          english_text?: string | null
+          french_text?: string | null
+          id?: string
+          raw_html?: string | null
+          source?: string
+          updated_at?: string
+          valid_date?: string
+        }
+        Relationships: []
+      }
+      weather_snapshots: {
+        Row: {
+          created_at: string
+          data: Json | null
+          id: string
+          location: string
+          source: string
+          timestamp: string
+          updated_at: string
+          valid_date: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json | null
+          id?: string
+          location: string
+          source: string
+          timestamp: string
+          updated_at?: string
+          valid_date: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json | null
+          id?: string
+          location?: string
+          source?: string
+          timestamp?: string
+          updated_at?: string
+          valid_date?: string
+        }
+        Relationships: []
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      [_ in never]: never
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
+}
+
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {},
+  },
+} as const

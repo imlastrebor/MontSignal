@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "typegen": "npx supabase gen types typescript --project-id bwuwzmkndmhslvrlkevi --schema public > src/lib/database.types.ts"
   },
   "dependencies": {
     "@radix-ui/react-accordion": "^1.2.12",

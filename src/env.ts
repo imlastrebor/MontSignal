@@ -5,8 +5,8 @@ const envSchema = z.object({
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
   OPENAI_API_KEY: z.string().min(1),
-  METEO_FRANCE_API_KEY: z.string().min(1).optional(),
-  INTERNAL_UPDATE_SECRET: z.string().min(1).optional(),
+  METEO_FRANCE_API_KEY: z.string().min(1).optional().or(z.literal("").optional()),
+  INTERNAL_UPDATE_SECRET: z.string().min(1).optional().or(z.literal("").optional()),
 });
 
 export const env = envSchema.parse({
