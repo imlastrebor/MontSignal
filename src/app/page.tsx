@@ -1,5 +1,11 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type DashboardResponse = {
@@ -209,6 +215,15 @@ export default async function Home() {
   const data = await fetchDashboard();
   const dailyToday = getTodayDaily(data.weather?.daily ?? null);
   const upcomingHours = getUpcomingHours(data.weather?.hourly ?? null, 6);
+  const altitudeBands = Object.entries(data.avalanche?.levelByAltitude ?? {});
+  const aspectList = (() => {
+    const aspects = data.avalanche?.aspects ?? {};
+    if (Array.isArray((aspects as any).all)) return (aspects as any).all as string[];
+    const merged = Object.values(aspects)
+      .filter(Array.isArray)
+      .flat() as string[];
+    return merged.length ? merged : [];
+  })();
 
   return (
     <main className="mx-auto flex min-h-screen max-w-5xl flex-col gap-8 px-6 py-10 sm:px-10 sm:py-14">
@@ -224,55 +239,89 @@ export default async function Home() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
-              Avalanche danger
-              <div className="flex gap-2">
-                <DangerBadge level={data.avalanche?.levelMin ?? null} />
-                <DangerBadge level={data.avalanche?.levelMax ?? null} />
-              </div>
+              Avalanche bulletin
+              <Badge variant="secondary">Valid: {data.avalanche?.validDate ?? "—"}</Badge>
             </CardTitle>
             <p className="text-sm text-neutral-500">
-              Valid: {data.avalanche?.validDate ?? "—"} • Issued:{" "}
-              {formatDate(data.avalanche?.issuedAt ?? null)}
+              Issued: {formatDate(data.avalanche?.issuedAt ?? null)}
             </p>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <p className="text-sm leading-6 text-neutral-800">
-              {data.avalanche?.summaryEn ?? "No summary available yet."}
-            </p>
-            <div className="h-px w-full bg-neutral-200" />
-            <div className="space-y-2">
-              <p className="text-xs font-medium uppercase text-neutral-500">Risk by altitude</p>
-              <div className="flex flex-wrap gap-2">
-                {Object.entries(data.avalanche?.levelByAltitude ?? {}).map(([band, val]) => (
-                  <Badge key={band} variant="secondary">
-                    {band}: {val ?? "n/a"}
-                  </Badge>
-                ))}
-                {Object.keys(data.avalanche?.levelByAltitude ?? {}).length === 0 && (
-                  <span className="text-sm text-neutral-500">Not provided</span>
-                )}
+          <CardContent className="space-y-6">
+            <div className="rounded-2xl border border-neutral-200 bg-gradient-to-r from-slate-50 via-white to-blue-50 p-5 shadow-sm">
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
+                    Risk assessment
+                  </p>
+                  <p className="text-2xl font-semibold text-neutral-900">
+                    {data.avalanche?.summaryEn ?? "No summary available yet."}
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="rounded-xl bg-white px-4 py-3 shadow-sm ring-1 ring-neutral-200">
+                    <p className="text-xs uppercase text-neutral-500">By altitude</p>
+                    <div className="mt-2 flex flex-col gap-2 text-sm">
+                      {altitudeBands.length > 0 ? (
+                        altitudeBands.map(([band, val]) => (
+                          <div key={band} className="flex items-center justify-between gap-3">
+                            <span className="text-neutral-700 font-medium">{band}</span>
+                            <DangerBadge level={typeof val === "number" ? val : null} />
+                          </div>
+                        ))
+                      ) : (
+                        <span className="text-neutral-500">Not provided</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-            <div className="space-y-1">
-              <p className="text-xs font-medium uppercase text-neutral-500">
-                Snowpack stability
-              </p>
-              <p className="text-sm leading-6 text-neutral-800">
-                {data.avalanche?.stabilityEn ?? "No data yet."}
-              </p>
-              {data.avalanche?.stabilityFr && (
-                <p className="text-xs text-neutral-500">FR: {data.avalanche.stabilityFr}</p>
-              )}
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="rounded-xl border border-neutral-200 bg-white/60 p-4 shadow-sm">
+                <p className="text-xs font-medium uppercase text-neutral-500">Critical aspects</p>
+                <div className="mt-2 flex flex-wrap gap-2 text-sm">
+                  {aspectList.length > 0 ? (
+                    aspectList.map((aspect) => (
+                      <Badge key={aspect} variant="outline" className="uppercase">
+                        {aspect}
+                      </Badge>
+                    ))
+                  ) : (
+                    <span className="text-neutral-500">Not specified</span>
+                  )}
+                </div>
+              </div>
             </div>
-            <div className="space-y-1">
-              <p className="text-xs font-medium uppercase text-neutral-500">Snow quality</p>
-              <p className="text-sm leading-6 text-neutral-800">
-                {data.avalanche?.snowQualityEn ?? "No data yet."}
-              </p>
-              {data.avalanche?.snowQualityFr && (
-                <p className="text-xs text-neutral-500">FR: {data.avalanche.snowQualityFr}</p>
-              )}
-            </div>
+
+            <Accordion type="multiple" className="space-y-2">
+              <AccordionItem value="stability">
+                <AccordionTrigger className="text-sm font-semibold text-neutral-800">
+                  Snowpack stability
+                </AccordionTrigger>
+                <AccordionContent className="space-y-2">
+                  <p className="text-sm leading-6 text-neutral-800">
+                    {data.avalanche?.stabilityEn ?? "No data yet."}
+                  </p>
+                  {data.avalanche?.stabilityFr && (
+                    <p className="text-xs text-neutral-500">FR: {data.avalanche.stabilityFr}</p>
+                  )}
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="snow-quality">
+                <AccordionTrigger className="text-sm font-semibold text-neutral-800">
+                  Snow quality
+                </AccordionTrigger>
+                <AccordionContent className="space-y-2">
+                  <p className="text-sm leading-6 text-neutral-800">
+                    {data.avalanche?.snowQualityEn ?? "No data yet."}
+                  </p>
+                  {data.avalanche?.snowQualityFr && (
+                    <p className="text-xs text-neutral-500">FR: {data.avalanche.snowQualityFr}</p>
+                  )}
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
           </CardContent>
         </Card>
 
