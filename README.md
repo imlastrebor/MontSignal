@@ -61,3 +61,10 @@ Requires a Supabase access token (`SUPABASE_ACCESS_TOKEN`) set in your env or Su
 
 - Endpoint: `GET /api/health`
 - Does: runs a lightweight select on `avalanche_bulletins` to confirm Supabase connectivity/env vars. Returns `{ ok: true/false, count, status }`.
+
+### Dashboard
+
+- Backend: `GET /api/dashboard` aggregates latest `avalanche_bulletins`, `text_sources`, and `weather_snapshots`.
+- Frontend: `src/app/page.tsx` renders the dashboard using shadcn/ui components and fetches the API with `cache: 'no-store'`.
+- Staleness refresh: `GET /api/dashboard?refresh=1` forces a BRA refresh for Mont-Blanc (if service role key is present). Otherwise, automatic refresh triggers when the latest BRA is older than 18h or missing.
+- Cron suggestion: schedule a daily call to `/api/update/meteo-france-bra` (with `x-internal-secret`) around 05:30/07:00 Europe/Paris, plus an optional afternoon run.

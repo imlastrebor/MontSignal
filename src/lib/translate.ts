@@ -43,7 +43,7 @@ export async function translateFrenchToEnglish(params: {
 
   const completion = await client.chat.completions.create({
     model: "gpt-5-mini",
-    temperature: 0.2,
+    // gpt-5-mini only supports the default temperature; omit for compatibility.
     messages: [
       {
         role: "system",

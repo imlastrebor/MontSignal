@@ -5,6 +5,7 @@ import {
   type ParsedMeteoFranceBra,
 } from "@/lib/meteoFrance";
 import { translateFrenchToEnglish } from "@/lib/translate";
+import type { Json } from "@/lib/database.types";
 
 const SOURCE = "meteo-france-bra";
 
@@ -60,11 +61,11 @@ export async function ingestMeteoFranceBra(
     issued_at: issuedAt,
     danger_level_min: parsed.riskMin,
     danger_level_max: parsed.riskMax,
-    danger_level_by_altitude: dangerLevelByAltitude,
-    danger_aspects: aspectsByAltitude,
+    danger_level_by_altitude: dangerLevelByAltitude as unknown as Json,
+    danger_aspects: aspectsByAltitude as unknown as Json,
     french_text: frenchText,
     english_text: englishText,
-    raw_json: parsed.raw,
+    raw_json: parsed.raw as unknown as Json,
   };
 
   const { data: bulletinRow, error: upsertErr } = await supabase

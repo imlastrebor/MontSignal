@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/update/meteo-france-bra",
+      "schedule": "30 15 * * *"
+    }
+  ]
+}

@@ -7,6 +7,7 @@ const envSchema = z.object({
   OPENAI_API_KEY: z.string().min(1),
   METEO_FRANCE_API_KEY: z.string().min(1).optional().or(z.literal("").optional()),
   INTERNAL_UPDATE_SECRET: z.string().min(1).optional().or(z.literal("").optional()),
+  CRON_SECRET: z.string().min(1).optional().or(z.literal("").optional()),
 });
 
 export const env = envSchema.parse({
@@ -16,4 +17,5 @@ export const env = envSchema.parse({
   OPENAI_API_KEY: process.env.OPENAI_API_KEY,
   METEO_FRANCE_API_KEY: process.env.METEO_FRANCE_API_KEY,
   INTERNAL_UPDATE_SECRET: process.env.INTERNAL_UPDATE_SECRET,
+  CRON_SECRET: process.env.CRON_SECRET,
 });

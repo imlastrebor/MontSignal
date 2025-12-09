@@ -114,10 +114,7 @@ export function parseMeteoFranceBraXml(xml: string): ParsedMeteoFranceBra {
   const altitude = risqueNode.ALTITUDE;
 
   if (risk1 !== null) {
-    const label =
-      risqueNode.LOC1 ??
-      (altitude ? `<${altitude}` : "all") ??
-      "all";
+    const label = risqueNode.LOC1 ?? (altitude ? `<${altitude}` : "all");
     riskBands.push({
       label,
       level: risk1,
@@ -126,10 +123,7 @@ export function parseMeteoFranceBraXml(xml: string): ParsedMeteoFranceBra {
   }
 
   if (risk2 !== null) {
-    const label =
-      risqueNode.LOC2 ??
-      (altitude ? `>${altitude}` : "all") ??
-      "all";
+    const label = risqueNode.LOC2 ?? (altitude ? `>${altitude}` : "all");
     riskBands.push({
       label,
       level: risk2,

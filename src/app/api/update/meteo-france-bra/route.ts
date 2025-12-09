@@ -5,9 +5,17 @@ import { ingestMeteoFranceBra } from "@/lib/ingestMeteoFranceBra";
 import { MASSIF_ID_MONT_BLANC } from "@/lib/meteoFrance";
 
 function authorize(req: Request): boolean {
-  if (!env.INTERNAL_UPDATE_SECRET) return true; // allow if not configured
-  const provided = req.headers.get("x-internal-secret");
-  return provided === env.INTERNAL_UPDATE_SECRET;
+  const allowedSecrets = [env.INTERNAL_UPDATE_SECRET, env.CRON_SECRET].filter(Boolean);
+  if (allowedSecrets.length === 0) return true; // allow if not configured
+
+  const headerSecret = req.headers.get("x-internal-secret");
+  const authHeader = req.headers.get("authorization");
+  const bearerSecret =
+    authHeader && authHeader.toLowerCase().startsWith("bearer ")
+      ? authHeader.slice(7).trim()
+      : null;
+
+  return allowedSecrets.some((secret) => secret && (secret === headerSecret || secret === bearerSecret));
 }
 
 export async function POST(req: Request) {
