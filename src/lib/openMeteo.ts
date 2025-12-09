@@ -149,6 +149,25 @@ function numberOrNull(value: unknown): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+function parisTodayIso(): string {
+  // en-CA yields YYYY-MM-DD format.
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: TIMEZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
+
+function clampValidDate(candidate: string | undefined | null): string {
+  const today = parisTodayIso();
+  if (!candidate) return today;
+  const parsed = new Date(candidate);
+  if (Number.isNaN(parsed.getTime())) return today;
+  const diffDays = Math.abs((parsed.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+  return diffDays > 2 ? today : candidate.slice(0, 10);
+}
+
 function pickHourlySnapshot(hourly: HourlySeries | undefined, now: Date) {
   if (!hourly) return null;
   const idx = nearestIndex(hourly.time, now);
@@ -214,8 +233,9 @@ export async function fetchOpenMeteoSnapshot(): Promise<OpenMeteoSnapshot> {
   const lowHour = pickHourlySnapshot(low.hourly, now);
   const highHour = pickHourlySnapshot(high.hourly, now);
 
-  const validDate =
-    (low.daily?.time?.[0] ?? high.daily?.time?.[0] ?? new Date().toISOString()).slice(0, 10);
+  const validDate = clampValidDate(
+    low.daily?.time?.[0] ?? high.daily?.time?.[0] ?? new Date().toISOString(),
+  );
 
   const snowfallRecentCm =
     numberOrNull(low.daily?.snowfall_sum?.[0]) ?? numberOrNull(high.daily?.snowfall_sum?.[0]);

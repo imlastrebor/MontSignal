@@ -11,6 +11,10 @@ type DashboardResponse = {
     aspects: Record<string, string[]>;
     summaryEn: string | null;
     summaryFr: string | null;
+    stabilityEn: string | null;
+    stabilityFr: string | null;
+    snowQualityEn: string | null;
+    snowQualityFr: string | null;
     issuedAt: string | null;
     validDate: string | null;
   } | null;
@@ -248,6 +252,26 @@ export default async function Home() {
                   <span className="text-sm text-neutral-500">Not provided</span>
                 )}
               </div>
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs font-medium uppercase text-neutral-500">
+                Snowpack stability
+              </p>
+              <p className="text-sm leading-6 text-neutral-800">
+                {data.avalanche?.stabilityEn ?? "No data yet."}
+              </p>
+              {data.avalanche?.stabilityFr && (
+                <p className="text-xs text-neutral-500">FR: {data.avalanche.stabilityFr}</p>
+              )}
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs font-medium uppercase text-neutral-500">Snow quality</p>
+              <p className="text-sm leading-6 text-neutral-800">
+                {data.avalanche?.snowQualityEn ?? "No data yet."}
+              </p>
+              {data.avalanche?.snowQualityFr && (
+                <p className="text-xs text-neutral-500">FR: {data.avalanche.snowQualityFr}</p>
+              )}
             </div>
           </CardContent>
         </Card>

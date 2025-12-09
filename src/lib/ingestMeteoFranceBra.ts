@@ -54,6 +54,20 @@ export async function ingestMeteoFranceBra(
     validDate,
   });
 
+  const stabilityFr = parsed.stabilityText ?? "";
+  const { englishText: stabilityEn } = await translateFrenchToEnglish({
+    text: stabilityFr,
+    source: `${SOURCE}-stability`,
+    validDate,
+  });
+
+  const snowQualityFr = parsed.snowQualityText ?? "";
+  const { englishText: snowQualityEn } = await translateFrenchToEnglish({
+    text: snowQualityFr,
+    source: `${SOURCE}-snow-quality`,
+    validDate,
+  });
+
   const bulletinInsert = {
     source: SOURCE,
     massif: parsed.massifName,
@@ -65,6 +79,10 @@ export async function ingestMeteoFranceBra(
     danger_aspects: aspectsByAltitude as unknown as Json,
     french_text: frenchText,
     english_text: englishText,
+    stability_text: stabilityFr || null,
+    stability_text_en: stabilityEn || null,
+    snow_quality_text: snowQualityFr || null,
+    snow_quality_text_en: snowQualityEn || null,
     raw_json: parsed.raw as unknown as Json,
   };
 

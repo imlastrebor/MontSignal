@@ -14,6 +14,10 @@ type DashboardResponse = {
     aspects: Record<string, string[]>;
     summaryEn: string | null;
     summaryFr: string | null;
+    stabilityEn: string | null;
+    stabilityFr: string | null;
+    snowQualityEn: string | null;
+    snowQualityFr: string | null;
     issuedAt: string | null;
     validDate: string | null;
   } | null;
@@ -210,6 +214,10 @@ export async function GET(req: Request) {
           ),
           summaryEn: bra.english_text,
           summaryFr: bra.french_text,
+          stabilityEn: bra.stability_text_en ?? null,
+          stabilityFr: bra.stability_text ?? null,
+          snowQualityEn: bra.snow_quality_text_en ?? null,
+          snowQualityFr: bra.snow_quality_text ?? null,
           issuedAt: bra.issued_at ?? null,
           validDate: bra.valid_date ?? null,
         };

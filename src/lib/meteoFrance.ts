@@ -33,6 +33,7 @@ export type ParsedMeteoFranceBra = {
     j2Comment?: string | null;
   };
   stabilityText?: string | null;
+  snowQualityText?: string | null;
   raw: unknown;
   rawXml: string;
 };
@@ -107,6 +108,13 @@ export function parseMeteoFranceBraXml(xml: string): ParsedMeteoFranceBra {
   const risqueNode = root.CARTOUCHERISQUE?.RISQUE ?? {};
   const penteNode = root.CARTOUCHERISQUE?.PENTE ?? {};
   const stabilityText = root.STABILITE?.TEXTE ?? null;
+  const snowQualityText =
+    root.QUALITE?.TEXTE ??
+    root.QUALITE_NEIGE?.TEXTE ??
+    root.QUALITENEIGE?.TEXTE ??
+    root.QUALITE_NEIGE?.Texte ??
+    root.QUALITE_NEIGE ??
+    null;
 
   const riskBands: BraRiskBand[] = [];
   const risk1 = numberOrNull(risqueNode.RISQUE1);
@@ -159,6 +167,7 @@ export function parseMeteoFranceBraXml(xml: string): ParsedMeteoFranceBra {
       j2Comment: root.CARTOUCHERISQUE?.CommentaireRisqueJ2 ?? null,
     },
     stabilityText,
+    snowQualityText,
     raw: root,
     rawXml: xml,
   };

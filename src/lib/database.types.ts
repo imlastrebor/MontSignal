@@ -26,6 +26,10 @@ export type Database = {
           id: string
           issued_at: string
           massif: string
+          snow_quality_text: string | null
+          snow_quality_text_en: string | null
+          stability_text: string | null
+          stability_text_en: string | null
           raw_json: Json | null
           source: string
           updated_at: string
@@ -42,6 +46,10 @@ export type Database = {
           id?: string
           issued_at: string
           massif: string
+          snow_quality_text?: string | null
+          snow_quality_text_en?: string | null
+          stability_text?: string | null
+          stability_text_en?: string | null
           raw_json?: Json | null
           source: string
           updated_at?: string
@@ -58,6 +66,10 @@ export type Database = {
           id?: string
           issued_at?: string
           massif?: string
+          snow_quality_text?: string | null
+          snow_quality_text_en?: string | null
+          stability_text?: string | null
+          stability_text_en?: string | null
           raw_json?: Json | null
           source?: string
           updated_at?: string
