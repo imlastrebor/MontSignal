@@ -135,7 +135,8 @@ function DangerBadge({ level }: { level: number | null }) {
 
 function getTodayDaily(daily: WeatherData["daily"]) {
   if (!daily) return null;
-  const pick = <T>(arr: T[] | undefined) => (Array.isArray(arr) && arr.length > 0 ? arr[0] : null);
+  const pick = <T,>(arr: T[] | undefined) =>
+    Array.isArray(arr) && arr.length > 0 ? arr[0] : null;
   return {
     date: pick(daily.time),
     sunrise: pick(daily.sunrise),
