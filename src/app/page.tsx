@@ -163,41 +163,6 @@ function getTodayDaily(daily: WeatherData["daily"]) {
   };
 }
 
-function getUpcomingHours(
-  hourly: WeatherData["hourly"],
-  count: number = 6,
-): {
-  label: string;
-  temp: number | null;
-  wind: number | null;
-  windDir: number | null;
-  gust: number | null;
-  cloud: number | null;
-  snow: number | null;
-}[] {
-  if (!hourly) return [];
-  const now = Date.now();
-  const entries = hourly.time.map((t, idx) => {
-    const ts = new Date(t).getTime();
-    return {
-      ts,
-      label: formatTime(t),
-      temp: hourly.temperature_2m?.[idx] ?? null,
-      wind: hourly.wind_speed_10m?.[idx] ?? null,
-      windDir: hourly.wind_direction_10m?.[idx] ?? null,
-      gust: hourly.wind_gusts_10m?.[idx] ?? null,
-      cloud: hourly.cloud_cover?.[idx] ?? null,
-      snow: hourly.snowfall?.[idx] ?? null,
-    };
-  });
-
-  return entries
-    .filter((e) => !Number.isNaN(e.ts) && e.ts >= now)
-    .sort((a, b) => a.ts - b.ts)
-    .slice(0, count)
-    .map(({ ts: _ts, ...rest }) => rest);
-}
-
 async function fetchDashboard(): Promise<DashboardResponse> {
   const base =
     process.env.NEXT_PUBLIC_BASE_URL ||
@@ -236,7 +201,6 @@ export default async function Home() {
   }
 
   const dailyToday = getTodayDaily(data?.weather?.daily ?? null);
-  const upcomingHours = getUpcomingHours(data?.weather?.hourly ?? null, 6);
   const altitudeBands = Object.entries(data?.avalanche?.levelByAltitude ?? {});
   const aspectList = (() => {
     const aspects = data?.avalanche?.aspects ?? {};
@@ -311,8 +275,7 @@ export default async function Home() {
               </CardHeader>
 
               <CardContent className="space-y-6">
-                <div className="grid gap-6 lg:grid-cols-2">
-                  <div className="space-y-3">
+                <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-medium">Daily</p>
                       {data?.weather?.snowfallRecentCm != null && (
@@ -371,55 +334,13 @@ export default async function Home() {
                         value={formatNumber(dailyToday?.uvIndexMax)}
                       />
                     </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <p className="text-sm font-medium">Next hours</p>
-
-                    <div className="divide-y rounded-lg border">
-                      {upcomingHours.length === 0 ? (
-                        <div className="p-4 text-sm text-muted-foreground">
-                          No upcoming hours available.
-                        </div>
-                      ) : (
-                        upcomingHours.map((h) => (
-                          <div
-                            key={h.label}
-                            className="grid grid-cols-[90px_1fr] gap-4 p-3"
-                          >
-                            <div className="text-sm font-medium tabular-nums">
-                              {h.label}
-                            </div>
-                            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-                              <StatRow
-                                label="Temp"
-                                value={formatNumber(h.temp, "°C")}
-                              />
-                              <StatRow
-                                label="Cloud"
-                                value={formatNumber(h.cloud, "%")}
-                              />
-                              <StatRow
-                                label="Wind"
-                                value={formatNumber(h.wind, " km/h")}
-                              />
-                              <StatRow
-                                label="Gust"
-                                value={formatNumber(h.gust, " km/h")}
-                              />
-                            </div>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <Card className="py-4">
                     <CardHeader className="border-b py-0">
                       <CardTitle className="text-base">
-                        Low mountain
+                        Mid mountain
                         {data?.weather?.lowAltitude?.name
                           ? ` — ${data.weather.lowAltitude.name}`
                           : ""}
@@ -564,31 +485,42 @@ export default async function Home() {
               </CardHeader>
 
               <CardContent className="space-y-6">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="rounded-lg border bg-muted/30 p-4">
-                    <p className="text-sm font-medium">Overall risk</p>
-                    <div className="mt-3 space-y-2">
-                      <StatRow
-                        label="Min level"
-                        value={<DangerBadge level={data?.avalanche?.levelMin ?? null} />}
-                      />
-                      <StatRow
-                        label="Max level"
-                        value={<DangerBadge level={data?.avalanche?.levelMax ?? null} />}
-                      />
+                <div className="grid gap-4 md:grid-cols-2">
+                  
+                  <div className="rounded-lg border">
+                    <div className="flex items-center justify-between gap-3 border-b p-4">
+                      <p className="text-sm font-medium">Risk by altitude</p>
+                      <span className="text-xs text-muted-foreground">
+                        From the bulletin’s risk cartouche
+                      </span>
+                    </div>
+                    <div className="divide-y">
+                      {altitudeBands.length > 0 ? (
+                        altitudeBands.map(([band, val]) => (
+                          <div
+                            key={band}
+                            className="flex items-center justify-between gap-3 p-4"
+                          >
+                            <span className="text-sm font-medium">{band}</span>
+                            <DangerBadge
+                              level={typeof val === "number" ? val : null}
+                            />
+                          </div>
+                        ))
+                      ) : (
+                        <div className="p-4 text-sm text-muted-foreground">
+                          Not provided.
+                        </div>
+                      )}
                     </div>
                   </div>
-
+                  
                   <div className="rounded-lg border bg-muted/30 p-4">
                     <p className="text-sm font-medium">Critical aspects</p>
                     <div className="mt-3 flex flex-wrap gap-2">
                       {aspectList.length > 0 ? (
                         aspectList.map((aspect) => (
-                          <Badge
-                            key={aspect}
-                            variant="outline"
-                            className="uppercase"
-                          >
+                          <Badge key={aspect} variant="outline" className="uppercase">
                             {aspect}
                           </Badge>
                         ))
@@ -599,32 +531,7 @@ export default async function Home() {
                       )}
                     </div>
                   </div>
-                </div>
 
-                <div className="rounded-lg border">
-                  <div className="flex items-center justify-between gap-3 border-b p-4">
-                    <p className="text-sm font-medium">Risk by altitude</p>
-                    <span className="text-xs text-muted-foreground">
-                      From the bulletin’s risk cartouche
-                    </span>
-                  </div>
-                  <div className="divide-y">
-                    {altitudeBands.length > 0 ? (
-                      altitudeBands.map(([band, val]) => (
-                        <div
-                          key={band}
-                          className="flex items-center justify-between gap-3 p-4"
-                        >
-                          <span className="text-sm font-medium">{band}</span>
-                          <DangerBadge level={typeof val === "number" ? val : null} />
-                        </div>
-                      ))
-                    ) : (
-                      <div className="p-4 text-sm text-muted-foreground">
-                        Not provided.
-                      </div>
-                    )}
-                  </div>
                 </div>
 
                 <div className="space-y-2">
