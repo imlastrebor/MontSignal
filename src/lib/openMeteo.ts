@@ -8,9 +8,12 @@ const MODEL = "meteofrance_seamless";
 const TIMEZONE = "Europe/Paris";
 
 const LOW_ALT = {
-  latitude: 45.9237,
-  longitude: 6.8693,
-  elevation: 1035, // Chamonix valley
+  // Mid-mountain reference point for Chamonix valley: Brévent (Planpraz).
+  // Open-Meteo geocoding returns "Le Brévent" near Chamonix; we keep that
+  // coordinate but request an elevation closer to Planpraz (~2000m).
+  latitude: 45.93158,
+  longitude: 6.83753,
+  elevation: 2000,
 };
 
 const HIGH_ALT = {
@@ -248,7 +251,7 @@ export async function fetchOpenMeteoSnapshot(): Promise<OpenMeteoSnapshot> {
     data: {
       model: MODEL,
       lowAltitude: {
-        name: "Chamonix",
+        name: "Brévent (Planpraz)",
         elevation: numberOrNull(low.elevation),
         temperature: lowHour?.temperature2m ?? null,
         windSpeed: lowHour?.windSpeed10m ?? null,
