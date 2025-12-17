@@ -1,5 +1,12 @@
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Accordion,
   AccordionContent,
@@ -109,7 +116,11 @@ function formatTime(value: string | null) {
   if (!value) return "—";
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return value;
-  return d.toLocaleTimeString("en-GB", { timeZone: "Europe/Paris", hour: "2-digit", minute: "2-digit" });
+  return d.toLocaleTimeString("en-GB", {
+    timeZone: "Europe/Paris",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 function formatNumber(value: number | null | undefined, suffix = "") {
@@ -126,21 +137,9 @@ function formatDurationSeconds(seconds: number | null | undefined) {
 
 function DangerBadge({ level }: { level: number | null }) {
   if (level == null) return <Badge variant="outline">n/a</Badge>;
-  const colors: Record<number, string> = {
-    1: "bg-green-100 text-green-800",
-    2: "bg-yellow-100 text-yellow-800",
-    3: "bg-orange-100 text-orange-800",
-    4: "bg-red-100 text-red-800",
-    5: "bg-black text-white",
-  };
-  const color = colors[level] ?? "bg-slate-100 text-slate-800";
-  return (
-    <span
-      className={`inline-flex items-center rounded-full px-2 py-1 text-sm font-semibold ${color}`}
-    >
-      Lvl {level}
-    </span>
-  );
+  const variant =
+    level >= 4 ? "destructive" : level === 3 ? "default" : "secondary";
+  return <Badge variant={variant}>Level {level}</Badge>;
 }
 
 function getTodayDaily(daily: WeatherData["daily"]) {
@@ -196,7 +195,7 @@ function getUpcomingHours(
     .filter((e) => !Number.isNaN(e.ts) && e.ts >= now)
     .sort((a, b) => a.ts - b.ts)
     .slice(0, count)
-    .map(({ ts, ...rest }) => ({ ...rest, label: formatTime(new Date(ts).toISOString()) }));
+    .map(({ ts: _ts, ...rest }) => rest);
 }
 
 async function fetchDashboard(): Promise<DashboardResponse> {
@@ -211,282 +210,497 @@ async function fetchDashboard(): Promise<DashboardResponse> {
   return res.json();
 }
 
+function StatRow({
+  label,
+  value,
+}: {
+  label: string;
+  value: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4">
+      <span className="text-sm text-muted-foreground">{label}</span>
+      <span className="text-sm font-medium tabular-nums">{value}</span>
+    </div>
+  );
+}
+
 export default async function Home() {
-  const data = await fetchDashboard();
-  const dailyToday = getTodayDaily(data.weather?.daily ?? null);
-  const upcomingHours = getUpcomingHours(data.weather?.hourly ?? null, 6);
-  const altitudeBands = Object.entries(data.avalanche?.levelByAltitude ?? {});
+  let data: DashboardResponse | null = null;
+  let loadError: string | null = null;
+
+  try {
+    data = await fetchDashboard();
+  } catch (err) {
+    loadError = err instanceof Error ? err.message : "Failed to load dashboard";
+  }
+
+  const dailyToday = getTodayDaily(data?.weather?.daily ?? null);
+  const upcomingHours = getUpcomingHours(data?.weather?.hourly ?? null, 6);
+  const altitudeBands = Object.entries(data?.avalanche?.levelByAltitude ?? {});
   const aspectList = (() => {
-    const aspects = data.avalanche?.aspects ?? {};
+    const aspects = data?.avalanche?.aspects ?? {};
     if (Array.isArray((aspects as any).all)) return (aspects as any).all as string[];
-    const merged = Object.values(aspects)
-      .filter(Array.isArray)
-      .flat() as string[];
+    const merged = Object.values(aspects).filter(Array.isArray).flat() as string[];
     return merged.length ? merged : [];
   })();
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-5xl flex-col gap-8 px-6 py-10 sm:px-10 sm:py-14">
-      <header className="flex flex-col gap-2">
-        <p className="text-sm font-semibold text-blue-800">MontSignal</p>
-        <h1 className="text-4xl font-semibold tracking-tight text-black sm:text-5xl">
-          Mont Blanc weather & avalanche dashboard
-        </h1>
-        <p className="text-sm text-neutral-600">Last updated: {formatDate(data.lastUpdated)}</p>
-      </header>
+    <main className="min-h-screen bg-background">
+      <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
+        <header className="flex flex-col gap-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary">MontSignal</Badge>
+              <span className="text-sm text-muted-foreground">
+                Mont Blanc conditions
+              </span>
+            </div>
+            <Button asChild variant="outline" size="sm">
+              <a href="/">Refresh</a>
+            </Button>
+          </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              Avalanche bulletin
-              <Badge variant="secondary">Valid: {data.avalanche?.validDate ?? "—"}</Badge>
-            </CardTitle>
-            <p className="text-sm text-neutral-500">
-              Issued: {formatDate(data.avalanche?.issuedAt ?? null)}
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+              Weather & avalanche dashboard
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Last updated: {data ? formatDate(data.lastUpdated) : "—"}
             </p>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="rounded-2xl border border-neutral-200 bg-gradient-to-r from-slate-50 via-white to-blue-50 p-5 shadow-sm">
-              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                <div className="space-y-1">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
-                    Risk assessment
-                  </p>
-                  <p className="text-2xl font-semibold text-neutral-900">
-                    {data.avalanche?.summaryEn ?? "No summary available yet."}
-                  </p>
-                </div>
-                <div className="flex flex-wrap items-center gap-3">
-                  <div className="rounded-xl bg-white px-4 py-3 shadow-sm ring-1 ring-neutral-200">
-                    <p className="text-xs uppercase text-neutral-500">By altitude</p>
-                    <div className="mt-2 flex flex-col gap-2 text-sm">
-                      {altitudeBands.length > 0 ? (
-                        altitudeBands.map(([band, val]) => (
-                          <div key={band} className="flex items-center justify-between gap-3">
-                            <span className="text-neutral-700 font-medium">{band}</span>
-                            <DangerBadge level={typeof val === "number" ? val : null} />
+          </div>
+        </header>
+
+        {loadError && (
+          <Card>
+            <CardHeader className="border-b">
+              <CardTitle>Could not load dashboard</CardTitle>
+              <CardDescription>
+                The API request failed. Check your env vars and try again.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="text-sm text-muted-foreground">
+              {loadError}
+            </CardContent>
+          </Card>
+        )}
+
+        <div className="grid gap-6 lg:grid-cols-2">
+          {/* Left: Weather */}
+          <section className="space-y-6">
+            <Card>
+              <CardHeader className="border-b">
+                <CardTitle className="flex items-start justify-between gap-3">
+                  <div className="space-y-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span>Weather</span>
+                      <Badge variant="outline">
+                        {data?.weather?.model
+                          ? `Model: ${data.weather.model}`
+                          : "Model: —"}
+                      </Badge>
+                    </div>
+                    <CardDescription>
+                      Source: {data?.weather?.source ?? "—"}
+                    </CardDescription>
+                  </div>
+                  <Badge variant="secondary">
+                    {dailyToday?.date ? formatDate(dailyToday.date) : "Today"}
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+
+              <CardContent className="space-y-6">
+                <div className="grid gap-6 lg:grid-cols-2">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium">Daily</p>
+                      {data?.weather?.snowfallRecentCm != null && (
+                        <Badge variant="outline">
+                          Recent snow:{" "}
+                          {formatNumber(data.weather.snowfallRecentCm, " cm")}
+                        </Badge>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <StatRow
+                        label="Sunrise"
+                        value={formatTime(dailyToday?.sunrise ?? null)}
+                      />
+                      <StatRow
+                        label="Sunset"
+                        value={formatTime(dailyToday?.sunset ?? null)}
+                      />
+                      <StatRow
+                        label="Daylight"
+                        value={formatDurationSeconds(dailyToday?.daylight ?? null)}
+                      />
+                      <StatRow
+                        label="Temp (max / min)"
+                        value={
+                          <>
+                            {formatNumber(dailyToday?.tempMax, "°C")} /{" "}
+                            {formatNumber(dailyToday?.tempMin, "°C")}
+                          </>
+                        }
+                      />
+                      <StatRow
+                        label="Wind / Gust (max)"
+                        value={
+                          <>
+                            {formatNumber(dailyToday?.windSpeedMax, " km/h")} /{" "}
+                            {formatNumber(dailyToday?.gustMax, " km/h")}
+                          </>
+                        }
+                      />
+                      <StatRow
+                        label="Precip (sum)"
+                        value={formatNumber(dailyToday?.precipSum, " mm")}
+                      />
+                      <StatRow
+                        label="Snowfall (sum)"
+                        value={formatNumber(dailyToday?.snowfallSum, " cm")}
+                      />
+                      <StatRow
+                        label="Precip probability"
+                        value={formatNumber(dailyToday?.precipProbMax, "%")}
+                      />
+                      <StatRow
+                        label="UV index (max)"
+                        value={formatNumber(dailyToday?.uvIndexMax)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <p className="text-sm font-medium">Next hours</p>
+
+                    <div className="divide-y rounded-lg border">
+                      {upcomingHours.length === 0 ? (
+                        <div className="p-4 text-sm text-muted-foreground">
+                          No upcoming hours available.
+                        </div>
+                      ) : (
+                        upcomingHours.map((h) => (
+                          <div
+                            key={h.label}
+                            className="grid grid-cols-[90px_1fr] gap-4 p-3"
+                          >
+                            <div className="text-sm font-medium tabular-nums">
+                              {h.label}
+                            </div>
+                            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                              <StatRow
+                                label="Temp"
+                                value={formatNumber(h.temp, "°C")}
+                              />
+                              <StatRow
+                                label="Cloud"
+                                value={formatNumber(h.cloud, "%")}
+                              />
+                              <StatRow
+                                label="Wind"
+                                value={formatNumber(h.wind, " km/h")}
+                              />
+                              <StatRow
+                                label="Gust"
+                                value={formatNumber(h.gust, " km/h")}
+                              />
+                            </div>
                           </div>
                         ))
-                      ) : (
-                        <span className="text-neutral-500">Not provided</span>
                       )}
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="rounded-xl border border-neutral-200 bg-white/60 p-4 shadow-sm">
-                <p className="text-xs font-medium uppercase text-neutral-500">Critical aspects</p>
-                <div className="mt-2 flex flex-wrap gap-2 text-sm">
-                  {aspectList.length > 0 ? (
-                    aspectList.map((aspect) => (
-                      <Badge key={aspect} variant="outline" className="uppercase">
-                        {aspect}
-                      </Badge>
-                    ))
-                  ) : (
-                    <span className="text-neutral-500">Not specified</span>
-                  )}
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Card className="py-4">
+                    <CardHeader className="border-b py-0">
+                      <CardTitle className="text-base">
+                        Low mountain
+                        {data?.weather?.lowAltitude?.name
+                          ? ` — ${data.weather.lowAltitude.name}`
+                          : ""}
+                      </CardTitle>
+                      <CardDescription>
+                        Elevation:{" "}
+                        {formatNumber(data?.weather?.lowAltitude?.elevation, " m")}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-2 pt-0">
+                      <StatRow
+                        label="Temperature"
+                        value={formatNumber(
+                          data?.weather?.lowAltitude?.temperature,
+                          "°C",
+                        )}
+                      />
+                      <StatRow
+                        label="Wind"
+                        value={formatNumber(
+                          data?.weather?.lowAltitude?.windSpeed,
+                          " km/h",
+                        )}
+                      />
+                      <StatRow
+                        label="Gust"
+                        value={formatNumber(data?.weather?.lowAltitude?.gust, " km/h")}
+                      />
+                      <StatRow
+                        label="Cloud cover"
+                        value={formatNumber(data?.weather?.lowAltitude?.cloudiness, "%")}
+                      />
+                      <StatRow
+                        label="Snowfall"
+                        value={formatNumber(data?.weather?.lowAltitude?.snowfall, " cm/h")}
+                      />
+                    </CardContent>
+                  </Card>
+
+                  <Card className="py-4">
+                    <CardHeader className="border-b py-0">
+                      <CardTitle className="text-base">
+                        High mountain
+                        {data?.weather?.highAltitude?.name
+                          ? ` — ${data.weather.highAltitude.name}`
+                          : ""}
+                      </CardTitle>
+                      <CardDescription>
+                        Elevation:{" "}
+                        {formatNumber(data?.weather?.highAltitude?.elevation, " m")}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-2 pt-0">
+                      <StatRow
+                        label="Temperature"
+                        value={formatNumber(
+                          data?.weather?.highAltitude?.temperature,
+                          "°C",
+                        )}
+                      />
+                      <StatRow
+                        label="Wind"
+                        value={formatNumber(
+                          data?.weather?.highAltitude?.windSpeed,
+                          " km/h",
+                        )}
+                      />
+                      <StatRow
+                        label="Gust"
+                        value={formatNumber(data?.weather?.highAltitude?.gust, " km/h")}
+                      />
+                      <StatRow
+                        label="Cloud cover"
+                        value={formatNumber(data?.weather?.highAltitude?.cloudiness, "%")}
+                      />
+                      <StatRow
+                        label="Snowfall"
+                        value={formatNumber(data?.weather?.highAltitude?.snowfall, " cm/h")}
+                      />
+                    </CardContent>
+                  </Card>
                 </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
 
-            <Accordion type="multiple" className="space-y-2">
-              <AccordionItem value="stability">
-                <AccordionTrigger className="text-sm font-semibold text-neutral-800">
-                  Snowpack stability
-                </AccordionTrigger>
-                <AccordionContent className="space-y-2">
-                  <p className="text-sm leading-6 text-neutral-800">
-                    {data.avalanche?.stabilityEn ?? "No data yet."}
-                  </p>
-                  {data.avalanche?.stabilityFr && (
-                    <p className="text-xs text-neutral-500">FR: {data.avalanche.stabilityFr}</p>
-                  )}
-                </AccordionContent>
-              </AccordionItem>
-              <AccordionItem value="snow-quality">
-                <AccordionTrigger className="text-sm font-semibold text-neutral-800">
-                  Snow quality
-                </AccordionTrigger>
-                <AccordionContent className="space-y-2">
-                  <p className="text-sm leading-6 text-neutral-800">
-                    {data.avalanche?.snowQualityEn ?? "No data yet."}
-                  </p>
-                  {data.avalanche?.snowQualityFr && (
-                    <p className="text-xs text-neutral-500">FR: {data.avalanche.snowQualityFr}</p>
-                  )}
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
-          </CardContent>
-        </Card>
+            <Card>
+              <CardHeader className="border-b">
+                <CardTitle>Source recaps</CardTitle>
+                <CardDescription>
+                  Short summaries (translated) from other sources.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Tabs defaultValue="mf" className="w-full">
+                  <TabsList>
+                    <TabsTrigger value="mf">Météo-France</TabsTrigger>
+                    <TabsTrigger value="chx">Chamonix-Météo</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="mf" className="space-y-2">
+                    <p className="text-xs text-muted-foreground">
+                      Last updated:{" "}
+                      {formatDate(data?.sources.meteoFrance?.lastUpdated ?? null)}
+                    </p>
+                    <p className="text-sm leading-6">
+                      {data?.sources.meteoFrance?.textEn ?? "No data yet."}
+                    </p>
+                  </TabsContent>
+                  <TabsContent value="chx" className="space-y-2">
+                    <p className="text-xs text-muted-foreground">
+                      Last updated:{" "}
+                      {formatDate(data?.sources.chamonixMeteo?.lastUpdated ?? null)}
+                    </p>
+                    <p className="text-sm leading-6">
+                      {data?.sources.chamonixMeteo?.textEn ?? "No data yet."}
+                    </p>
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
+          </section>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              Weather snapshot
-              <Badge variant="outline">
-                {data.weather?.model ? `Model: ${data.weather.model}` : "Model: —"}
-              </Badge>
-            </CardTitle>
-            <p className="text-sm text-neutral-500">Source: {data.weather?.source ?? "pending"}</p>
-          </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-4 text-sm text-neutral-800">
-            <div>
-              <p className="font-semibold">
-                Low altitude{data.weather?.lowAltitude?.name ? ` – ${data.weather.lowAltitude.name}` : ""}
-              </p>
-              <p className="text-xs text-neutral-500">
-                Elevation: {formatNumber(data.weather?.lowAltitude?.elevation, " m")}
-              </p>
-              <p>Temp: {formatNumber(data.weather?.lowAltitude?.temperature, "°C")}</p>
-              <p>Wind: {formatNumber(data.weather?.lowAltitude?.windSpeed, " km/h")}</p>
-              <p>Gust: {formatNumber(data.weather?.lowAltitude?.gust, " km/h")}</p>
-              <p>Cloud: {formatNumber(data.weather?.lowAltitude?.cloudiness, "%")}</p>
-              <p>Snowfall: {formatNumber(data.weather?.lowAltitude?.snowfall, " cm/h")}</p>
-            </div>
-            <div>
-              <p className="font-semibold">
-                High altitude
-                {data.weather?.highAltitude?.name ? ` – ${data.weather.highAltitude.name}` : ""}
-              </p>
-              <p className="text-xs text-neutral-500">
-                Elevation: {formatNumber(data.weather?.highAltitude?.elevation, " m")}
-              </p>
-              <p>Temp: {formatNumber(data.weather?.highAltitude?.temperature, "°C")}</p>
-              <p>Wind: {formatNumber(data.weather?.highAltitude?.windSpeed, " km/h")}</p>
-              <p>Gust: {formatNumber(data.weather?.highAltitude?.gust, " km/h")}</p>
-              <p>Cloud: {formatNumber(data.weather?.highAltitude?.cloudiness, "%")}</p>
-              <p>Snowfall: {formatNumber(data.weather?.highAltitude?.snowfall, " cm/h")}</p>
-            </div>
-            <div className="col-span-2">
-              <p>Recent snowfall: {formatNumber(data.weather?.snowfallRecentCm, " cm")}</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+          {/* Right: Avalanche */}
+          <section className="space-y-6">
+            <Card>
+              <CardHeader className="border-b">
+                <CardTitle className="flex items-start justify-between gap-3">
+                  <div className="space-y-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span>Avalanche bulletin</span>
+                      <Badge variant="outline">
+                        Valid: {data?.avalanche?.validDate ?? "—"}
+                      </Badge>
+                    </div>
+                    <CardDescription>
+                      Issued: {formatDate(data?.avalanche?.issuedAt ?? null)}
+                    </CardDescription>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <DangerBadge level={data?.avalanche?.levelMax ?? null} />
+                  </div>
+                </CardTitle>
+              </CardHeader>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Forecast details</CardTitle>
-          <p className="text-sm text-neutral-500">
-            Today: {dailyToday?.date ? formatDate(dailyToday.date) : "—"}
-          </p>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <p className="text-xs font-medium uppercase text-neutral-500">Daily summary</p>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-neutral-800">
-                <span>Sunrise</span>
-                <span className="text-right">{formatTime(dailyToday?.sunrise ?? null)}</span>
-                <span>Sunset</span>
-                <span className="text-right">{formatTime(dailyToday?.sunset ?? null)}</span>
-                <span>Daylight</span>
-                <span className="text-right">
-                  {formatDurationSeconds(dailyToday?.daylight ?? null)}
-                </span>
-                <span>Temp max/min</span>
-                <span className="text-right">
-                  {formatNumber(dailyToday?.tempMax, "°C")} / {formatNumber(dailyToday?.tempMin, "°C")}
-                </span>
-                <span>Wind / Gust</span>
-                <span className="text-right">
-                  {formatNumber(dailyToday?.windSpeedMax, " km/h")} /{" "}
-                  {formatNumber(dailyToday?.gustMax, " km/h")}
-                </span>
-                <span>Wind dir</span>
-                <span className="text-right">{formatNumber(dailyToday?.windDirection, "°")}</span>
-                <span>Snowfall (day)</span>
-                <span className="text-right">
-                  {formatNumber(dailyToday?.snowfallSum, " cm")}
-                </span>
-                <span>Precipitation</span>
-                <span className="text-right">
-                  {formatNumber(dailyToday?.precipSum, " mm")}
-                </span>
-                <span>Precip prob</span>
-                <span className="text-right">
-                  {formatNumber(dailyToday?.precipProbMax, "%")}
-                </span>
-                <span>UV index</span>
-                <span className="text-right">{formatNumber(dailyToday?.uvIndexMax)}</span>
-              </div>
-            </div>
+              <CardContent className="space-y-6">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="rounded-lg border bg-muted/30 p-4">
+                    <p className="text-sm font-medium">Overall risk</p>
+                    <div className="mt-3 space-y-2">
+                      <StatRow
+                        label="Min level"
+                        value={<DangerBadge level={data?.avalanche?.levelMin ?? null} />}
+                      />
+                      <StatRow
+                        label="Max level"
+                        value={<DangerBadge level={data?.avalanche?.levelMax ?? null} />}
+                      />
+                    </div>
+                  </div>
 
-            <div className="space-y-2">
-              <p className="text-xs font-medium uppercase text-neutral-500">Next hours</p>
-              <div className="overflow-auto rounded-md border border-neutral-200">
-                <table className="w-full text-left text-sm text-neutral-800">
-                  <thead className="bg-neutral-50 text-xs uppercase text-neutral-500">
-                    <tr>
-                      <th className="px-3 py-2">Time</th>
-                      <th className="px-3 py-2">Temp</th>
-                      <th className="px-3 py-2">Wind / Gust</th>
-                      <th className="px-3 py-2">Cloud</th>
-                      <th className="px-3 py-2">Snow</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {upcomingHours.length === 0 && (
-                      <tr>
-                        <td className="px-3 py-3 text-neutral-500" colSpan={5}>
-                          No upcoming hours available.
-                        </td>
-                      </tr>
+                  <div className="rounded-lg border bg-muted/30 p-4">
+                    <p className="text-sm font-medium">Critical aspects</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {aspectList.length > 0 ? (
+                        aspectList.map((aspect) => (
+                          <Badge
+                            key={aspect}
+                            variant="outline"
+                            className="uppercase"
+                          >
+                            {aspect}
+                          </Badge>
+                        ))
+                      ) : (
+                        <span className="text-sm text-muted-foreground">
+                          Not specified
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-lg border">
+                  <div className="flex items-center justify-between gap-3 border-b p-4">
+                    <p className="text-sm font-medium">Risk by altitude</p>
+                    <span className="text-xs text-muted-foreground">
+                      From the bulletin’s risk cartouche
+                    </span>
+                  </div>
+                  <div className="divide-y">
+                    {altitudeBands.length > 0 ? (
+                      altitudeBands.map(([band, val]) => (
+                        <div
+                          key={band}
+                          className="flex items-center justify-between gap-3 p-4"
+                        >
+                          <span className="text-sm font-medium">{band}</span>
+                          <DangerBadge level={typeof val === "number" ? val : null} />
+                        </div>
+                      ))
+                    ) : (
+                      <div className="p-4 text-sm text-muted-foreground">
+                        Not provided.
+                      </div>
                     )}
-                    {upcomingHours.map((h) => (
-                      <tr key={h.label} className="odd:bg-white even:bg-neutral-50/60">
-                        <td className="px-3 py-2">{h.label}</td>
-                        <td className="px-3 py-2">{formatNumber(h.temp, "°C")}</td>
-                        <td className="px-3 py-2">
-                          {formatNumber(h.wind, " km/h")} / {formatNumber(h.gust, " km/h")}
-                        </td>
-                        <td className="px-3 py-2">{formatNumber(h.cloud, "%")}</td>
-                        <td className="px-3 py-2">{formatNumber(h.snow, " cm/h")}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+                  </div>
+                </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Source recaps</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="mf" className="w-full">
-            <TabsList>
-              <TabsTrigger value="mf">Météo-France</TabsTrigger>
-              <TabsTrigger value="chx">Chamonix-Météo</TabsTrigger>
-            </TabsList>
-            <TabsContent value="mf" className="space-y-2">
-              <p className="text-xs text-neutral-500">
-                Last updated: {formatDate(data.sources.meteoFrance?.lastUpdated ?? null)}
-              </p>
-              <p className="text-sm leading-6 text-neutral-800">
-                {data.sources.meteoFrance?.textEn ?? "No data yet."}
-              </p>
-            </TabsContent>
-            <TabsContent value="chx" className="space-y-2">
-              <p className="text-xs text-neutral-500">
-                Last updated: {formatDate(data.sources.chamonixMeteo?.lastUpdated ?? null)}
-              </p>
-              <p className="text-sm leading-6 text-neutral-800">
-                {data.sources.chamonixMeteo?.textEn ?? "No data yet."}
-              </p>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">Summary</p>
+                  <Tabs defaultValue="en">
+                    <TabsList>
+                      <TabsTrigger value="en">English</TabsTrigger>
+                      <TabsTrigger value="fr">French</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="en" className="pt-2">
+                      <p className="text-sm leading-6">
+                        {data?.avalanche?.summaryEn ?? "No summary available yet."}
+                      </p>
+                    </TabsContent>
+                    <TabsContent value="fr" className="pt-2">
+                      <p className="text-sm leading-6">
+                        {data?.avalanche?.summaryFr ?? "Aucun résumé disponible."}
+                      </p>
+                    </TabsContent>
+                  </Tabs>
+                </div>
+
+                <Accordion type="multiple" className="space-y-2">
+                  <AccordionItem value="stability">
+                    <AccordionTrigger className="text-sm">
+                      Snowpack stability
+                    </AccordionTrigger>
+                    <AccordionContent className="space-y-3">
+                      <Tabs defaultValue="en">
+                        <TabsList>
+                          <TabsTrigger value="en">English</TabsTrigger>
+                          <TabsTrigger value="fr">French</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="en" className="pt-2">
+                          <p className="text-sm leading-6">
+                            {data?.avalanche?.stabilityEn ?? "No data yet."}
+                          </p>
+                        </TabsContent>
+                        <TabsContent value="fr" className="pt-2">
+                          <p className="text-sm leading-6">
+                            {data?.avalanche?.stabilityFr ?? "Pas de données."}
+                          </p>
+                        </TabsContent>
+                      </Tabs>
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  <AccordionItem value="snow-quality">
+                    <AccordionTrigger className="text-sm">
+                      Snow quality
+                    </AccordionTrigger>
+                    <AccordionContent className="space-y-3">
+                      <Tabs defaultValue="en">
+                        <TabsList>
+                          <TabsTrigger value="en">English</TabsTrigger>
+                          <TabsTrigger value="fr">French</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="en" className="pt-2">
+                          <p className="text-sm leading-6">
+                            {data?.avalanche?.snowQualityEn ?? "No data yet."}
+                          </p>
+                        </TabsContent>
+                        <TabsContent value="fr" className="pt-2">
+                          <p className="text-sm leading-6">
+                            {data?.avalanche?.snowQualityFr ?? "Pas de données."}
+                          </p>
+                        </TabsContent>
+                      </Tabs>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+              </CardContent>
+            </Card>
+          </section>
+        </div>
+      </div>
     </main>
   );
 }
